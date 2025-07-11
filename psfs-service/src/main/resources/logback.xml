@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+	<!-- Log Directory & File Naming -->
+	<property name="LOG_PATH" value="logs" />
+	<property name="LOG_FILE_NAME" value="psfs-service" />
+	<property name="LOG_FILE_MAX_SIZE" value="20MB" />
+	<property name="LOG_FILE_MAX_HISTORY" value="1" />
+	<property name="LOG_FILE_TOTALSIZECAP" value="3GB" />
+
+	<!-- Console Appender -->
+	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%d{dd-MM-yyyy HH:mm:ss.SSS} [%X{RequestId}] [%thread]
+				%-5level %logger{36}.%M - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<!-- Rolling File Appender -->
+	<appender name="FILE"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOG_PATH}/${LOG_FILE_NAME}.log</file>
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<pattern>%d{dd-MM-yyyy HH:mm:ss.SSS} [%X{RequestId}] [%thread]
+				%-5level %logger{36}.%M - %msg%n</pattern>
+		</encoder>
+		<rollingPolicy
+			class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+			<fileNamePattern>
+				${LOG_PATH}/archived/${LOG_FILE_NAME}_%d{dd-MM-yyyy}_%i.log</fileNamePattern>
+			<maxFileSize>${LOG_FILE_MAX_SIZE}</maxFileSize>
+			<maxHistory>${LOG_FILE_MAX_HISTORY}</maxHistory>
+			<totalSizeCap>${LOG_FILE_TOTALSIZECAP}</totalSizeCap>
+		</rollingPolicy>
+	</appender>
+
+	<!-- Root Logger -->
+	<root level="INFO">
+		<appender-ref ref="CONSOLE" />
+		<appender-ref ref="FILE" />
+	</root>
+
+</configuration>
