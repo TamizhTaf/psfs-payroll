@@ -1646,7 +1646,7 @@ const Home = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-6 mt-6">
             {services.map((service, index) => (
-              <div key={index} className="border rounded-md p-4 shadow-lg bg-white text-center">
+              <div key={index} className="rounded-md p-4 shadow-lg bg-white text-center">
                 <img src={service.imageUrl} alt={service.name} className="w-32 h-32 object-cover mx-auto mb-4 rounded-md" />
                 <h4 className="text-lg font-medium text-gray-900">{service.name}</h4>
                 <p className="text-sm text-gray-600">{service.description}</p>
