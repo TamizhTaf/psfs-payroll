@@ -4,6 +4,11 @@ import { ChevronLeft, ChevronRight, Upload, Download, Trash2, Filter, Plus, Sett
 // Context for global state management
 const AppContext = createContext();
 
+const companyList = [{ "code": "PSFS", "name": "Powerstar Facility Management Service" },
+{ "code": "FFMS", "name": "Focus Facility Management Service" },
+{ "code": "SFMS", "name": "Shine Facility Management Service" }];
+
+
 const isEmpty = (val) =>
   val === null || val === undefined || val.toString().trim() === '';
 
@@ -285,11 +290,6 @@ const Login = () => {
             </button>
           </div>
 
-          <div className="mt-6 p-4 bg-blue-50 rounded-md">
-            <h3 className="text-sm font-medium text-blue-800">Test Credentials:</h3>
-            <p className="text-sm text-blue-600">Admin: 100 / 1234</p>
-            <p className="text-sm text-blue-600">Employee: 5437 / 1234</p>
-          </div>
         </form>
       </div>
     </div>
@@ -446,17 +446,56 @@ const Navigation = ({ activeTab, setActiveTab }) => {
     <nav className="bg-gray-50 border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex space-x-8">
+          <button
+            onClick={() => setActiveTab('home')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'home'
+              ? 'border-indigo-500 text-indigo-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}>
+            <div className="flex items-center space-x-2">
+              <Upload className="h-4 w-4" />
+              <span>Home</span>
+            </div>
+          </button>
+
+          {user.id <= 0 && (
+            <button
+              onClick={() => setActiveTab('login')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'login'
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}>
+              <div className="flex items-center space-x-2">
+                <Upload className="h-4 w-4" />
+                <span>Login</span>
+              </div>
+            </button>
+          )}
+
           {user.role === 'Admin' && (
             <button
               onClick={() => setActiveTab('uploads')}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'uploads'
                 ? 'border-indigo-500 text-indigo-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-            >
+                }`}>
               <div className="flex items-center space-x-2">
                 <Upload className="h-4 w-4" />
                 <span>Uploads</span>
+              </div>
+            </button>
+          )}
+
+          {user.role === 'Admin' && (
+            <button
+              onClick={() => setActiveTab('esiUploads')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'esiUploads'
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}>
+              <div className="flex items-center space-x-2">
+                <Upload className="h-4 w-4" />
+                <span>ESI Uploads</span>
               </div>
             </button>
           )}
@@ -466,8 +505,7 @@ const Navigation = ({ activeTab, setActiveTab }) => {
             className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'reports'
               ? 'border-indigo-500 text-indigo-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-          >
+              }`}>
             <div className="flex items-center space-x-2">
               <FileText className="h-4 w-4" />
               <span>Reports</span>
@@ -479,33 +517,48 @@ const Navigation = ({ activeTab, setActiveTab }) => {
   );
 };
 
-// Upload Form Modal Component
-const UploadModal = ({ isOpen, onClose, onSubmit, loading }) => {
+const UploadModal = ({ uploadPurpose, isOpen, onClose, onSubmit, loading }) => {
+
+  // Initialize the state for form data
   const [formData, setFormData] = useState({
     upload_month: '',
     file_name: '',
-    file_content: ''
+    file_content: '',
+    user_id: '',
+    upload_purpose: uploadPurpose
   });
 
+  // Handle the form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+
+    // At this point, file_name and file_content should be properly updated
+    console.log(formData); // Verify the formData before submitting
+
+    onSubmit(formData); // Pass the form data to the onSubmit function
   };
 
+  // Handle file input change
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    console.log(file);
-    setFormData({ ...formData, file_name: file.name });
+    console.log(file); // Log the file for debugging
 
+    // Create a FileReader to read the file's content
     const reader = new FileReader();
     reader.onloadend = () => {
-      setFormData({ ...formData, file_content: reader.result });
+      setFormData((prevFormData) => ({
+        ...prevFormData,
+        file_name: file.name,   // Update the file_name in state
+        file_content: reader.result  // Store the file content as a data URL
+      }));
     };
-    reader.readAsDataURL(file);
+
+    reader.readAsDataURL(file);  // Read the file as a Data URL
   };
 
+  // Return null if the modal is not open
   if (!isOpen) return null;
 
   return (
@@ -515,18 +568,35 @@ const UploadModal = ({ isOpen, onClose, onSubmit, loading }) => {
           <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Upload</h3>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Upload Month
-              </label>
-              <input
-                type="month"
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                value={formData.upload_month}
-                onChange={(e) => setFormData({ ...formData, upload_month: e.target.value })}
-              />
-            </div>
+            {uploadPurpose === 'SALARY' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Upload Month
+                </label>
+                <input
+                  type="month"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  value={formData.upload_month}
+                  onChange={(e) => setFormData({ ...formData, upload_month: e.target.value })}
+                />
+              </div>
+            )}
+
+            {uploadPurpose === 'ESI' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  User Id
+                </label>
+                <input
+                  type="text"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  value={formData.user_id}
+                  onChange={(e) => setFormData({ ...formData, user_id: e.target.value })}
+                />
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -639,11 +709,13 @@ const Uploads = () => {
   const [error, setError] = useState('');
 
   const itemsPerPage = 5;
+  const upload_purpose = 'SALARY';
 
   const fetchUploads = async () => {
     setLoading(true);
     setError('');
     try {
+      filters.upload_purpose = upload_purpose;
       const apiService = RealApiService;
       const result = await apiService.getUploads(filters);
       setUploads(result);
@@ -662,6 +734,7 @@ const Uploads = () => {
     setUploadLoading(true);
     setError('');
     try {
+      uploadData.upload_purpose = upload_purpose;
       const apiService = RealApiService;
       await apiService.createUpload({
         ...uploadData
@@ -681,6 +754,7 @@ const Uploads = () => {
     try {
       var request = {};
       request.id = upload.id;
+      request.upload_purpose = upload_purpose;
       const apiService = RealApiService;
       const result = await apiService.downloadUpload(request);
       handleExportExcel(result);
@@ -719,7 +793,9 @@ const Uploads = () => {
     if (data.file_name.toLowerCase().endsWith('.xlsx')) {
       mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     }
-
+    if (data.file_name.toLowerCase().endsWith('.pdf')) {
+      mimeType = 'application/pdf';
+    }
     const blob = new Blob([byteArray], { type: mimeType });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -882,6 +958,275 @@ const Uploads = () => {
       </div>
 
       <UploadModal
+        uploadPurpose={upload_purpose}
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSubmit={handleUpload}
+        loading={uploadLoading}
+      />
+    </div>
+  );
+};
+
+// ESIUploads Component 
+const ESIUploads = () => {
+  const [uploads, setUploads] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({ file_name: '', user_id: '' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showModal, setShowModal] = useState(false);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const itemsPerPage = 5;
+  const upload_purpose = 'ESI';
+
+  const fetchUploads = async () => {
+    setLoading(true);
+    setError('');
+    try {
+
+      filters.upload_purpose = upload_purpose;
+      const apiService = RealApiService;
+      const result = await apiService.getUploads(filters);
+      setUploads(result);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUploads();
+  }, [filters]);
+
+  const handleUpload = async (uploadData) => {
+    setUploadLoading(true);
+    setError('');
+    try {
+      uploadData.upload_purpose = upload_purpose;
+      const apiService = RealApiService;
+      await apiService.createUpload({
+        ...uploadData
+      });
+      setShowModal(false);
+      fetchUploads();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
+  const handleUploadDownload = async (upload) => {
+    setLoading(true);
+    setError('');
+    try {
+      var request = {};
+      request.id = upload.id;
+      request.upload_purpose = upload_purpose;
+      const apiService = RealApiService;
+      const result = await apiService.downloadUpload(request);
+      handleExportExcel(result);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExportExcel = (data) => {
+
+    if (isEmpty(data.file_name) && isEmpty(data.file_content)) {
+      console.error('Empty or invalid file name or file content.');
+      return;
+    }
+
+    let base64 = data.file_content;
+
+    // Clean up possible base64 prefix
+    if (base64.startsWith('data:')) {
+      base64 = base64.split(',')[1];
+    }
+
+    // Validate base64 length and characters
+    if (!base64 || base64.trim() === '') {
+      console.error('Empty or invalid base64 string.');
+      return;
+    }
+
+    const byteCharacters = atob(base64);
+    const byteNumbers = Array.from(byteCharacters, c => c.charCodeAt(0));
+    const byteArray = new Uint8Array(byteNumbers);
+
+    let mimeType = 'application/vnd.ms-excel'; // default
+    if (data.file_name.toLowerCase().endsWith('.xlsx')) {
+      mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    }
+    if (data.file_name.toLowerCase().endsWith('.pdf')) {
+      mimeType = 'application/pdf';
+    }
+    const blob = new Blob([byteArray], { type: mimeType });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = data.file_name
+    link.click();
+  };
+
+  const filteredUploads = uploads.filter(upload => {
+    const matchesName = !filters.file_name || upload.file_name.toLowerCase().includes(filters.file_name.toLowerCase());
+    const matchesMonth = !filters.user_id || upload.user_id === filters.user_id;
+    return matchesName && matchesMonth;
+  });
+
+  const totalPages = Math.ceil(filteredUploads.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedUploads = filteredUploads.slice(startIndex, startIndex + itemsPerPage);
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Uploads Management</h2>
+          <button
+            onClick={() => setShowModal(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add New Upload
+          </button>
+        </div>
+
+        {error && (
+          <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            {error}
+          </div>
+        )}
+
+        {/* Filters */}
+        <div className="bg-white p-4 rounded-lg shadow mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Filter by Name
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Search uploads..."
+                  value={filters.file_name}
+                  onChange={(e) => setFilters({ ...filters, file_name: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Filter by User
+              </label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  value={filters.user_id}
+                  onChange={(e) => setFilters({ ...filters, user_id: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-end">
+              <button
+                onClick={() => {
+                  setFilters({ file_name: '', user_id: '' });
+                  setCurrentPage(1);
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="bg-white shadow overflow-hidden sm:rounded-md">
+          {loading ? (
+            <div className="p-6">
+              <SkeletonLoader rows={5} />
+            </div>
+          ) : (
+            <>
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Upload Month
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      File Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Upload Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {paginatedUploads.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
+                        No uploads found
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedUploads.map((upload) => (
+                      <tr key={upload.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {upload.user_id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {upload.file_name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(upload.upload_date).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleUploadDownload(upload)}
+                              className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-indigo-600 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            >
+                              <Download className="h-3 w-3 mr-1" />
+                              Download
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+
+              {totalPages > 1 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      <UploadModal
+        uploadPurpose={upload_purpose}
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         onSubmit={handleUpload}
@@ -1120,23 +1465,141 @@ const Reports = () => {
   );
 };
 
+
+// Home Component
+
+// Import images from the local assets folder
+import driverImg from './assets/img/driverImg.jpg';
+import officeFemaleImg from './assets/img/officeFemaleImg.jpg';
+import shoppingImg from './assets/img/shoppingImg.jpg';
+import technicianImg from './assets/img/technicianImg.jpg';
+import restaurantImg from './assets/img/restaurantImg.jpg';
+import warehouseImg from './assets/img/warehouseImg.jpg';
+import corporateImg from './assets/img/corporateImg.jpg';
+import officeImg from './assets/img/officeImg.jpg';
+
+const Home = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Extended services list with 20 services
+  const services = [
+    {
+      name: "Driver Facility Service",
+      imageUrl: driverImg,
+      description: "We are master in offering best in class services therefore we offer one of the best Driver Facility Service. Optimum functionality and on time execution of our service has increased its craze among our valued customers. Superb smooth working and high performance of our service is highly liked among the customers. Additionally, these can be availed from us at reasonable price."
+
+    },
+    {
+      name: "Office Female Assistant Service",
+      imageUrl: officeFemaleImg,
+      description: "We hold immense recognition in this sector and are specialized in offering a range of Office Female Assistant Service. This service is completed by highly experienced and trained professionals. We provide these services in compliance with the requirements made by the customers. Additionally, these can be availed from us at reasonable price."
+    },
+    {
+      name: "Shopping Mall Security Service",
+      imageUrl: shoppingImg,
+      description: "We are betrothed throughout providing Shopping Mall Security Services to our customers. We have hired best out of our lot in presenting these services effectively. We are known for reasonable rates and reliability. Our Shopping Mall Security Service are highly accredited and accepted in the industry. Additionally, Our services are superb and our prices are affordable."
+    },
+    {
+      name: "Technician Support Service",
+      imageUrl: technicianImg,
+      description: "We are amongst the most reliable companies included in providing a far reaching scope of Technician Support Services. We have a group of exceptionally gifted experts who completed these Technician Support Services in a smooth way to render greatest customer fulfillment. Additionally, Our services are superb and our prices are affordable."
+    },
+    {
+      name: "Restaurant Housekeeping Service",
+      imageUrl: restaurantImg,
+      description: "Our firm is just about the leading companies in offering Restaurant Housekeeping Service to customers. The service offers of this service is offered training and detailed understanding of these services. This Restaurant Housekeeping Service is offered at reasonable price and highly acclaimed from the valuable customers. Additionally, Our services are superb and our prices are affordable."
+    },
+    {
+      name: "Warehouse Housekeeping Services",
+      imageUrl: warehouseImg,
+      description: "We are trusted firm for presenting Warehouse Housekeeping Services. These services are well known for their features like reliability, flexibility and timeliness. High quality machines and tools utilized by our teama s people while rendering these services. Apart from this, we offer these Warehouse Housekeeping Services at market leading prices for our customers."
+    },
+    {
+      name: "Corporate Housekeeping Service - Global Excellence Standards",
+      imageUrl: corporateImg,
+      description: "We are famous brand for offering Corporate Housekeeping Services. Our offered services are widely praised by our customers which are located all round the world. Additionally, Our services are superb and our prices are affordable."
+    },
+    {
+      name: "Office Housekeeping Service - Superior Quality Management",
+      imageUrl: officeImg,
+      description: "our firm shares trust and quality with his customers in providing the highest quality Office Housekeeping Service. We are backed up by the team of specially skilled professionals, under whose supervision the service is executed for making it flawless. Our Office Housekeeping Service is confident of optimum standard class and comes in a wide range for selection. Additionally, Our services are superb and our prices are affordable."
+    }
+  ];
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+
+        {/* About Power Star Facility Services */}
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            About Power Star Facility Services
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Registered in 2015, Power Star Facility Services has made a name for itself as one of the top service providers of office boy services and hotel housekeeping services in the country. Power Star Facility Services is listed in Trade India's list of verified companies offering a wide array of Industrial Housekeeping Services, Hotel Housekeeping Services, and more. Contact us for office boy services and hotel housekeeping services in Chennai, Tamil Nadu.
+          </p>
+        </div>
+
+        {/* Services Section */}
+        <div className="mt-12 space-y-12">
+          <h3 className="text-xl font-semibold text-gray-900 text-center">Our Services</h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-6 mt-6">
+            {services.map((service, index) => (
+              <div key={index} className="border rounded-md p-4 shadow-lg bg-white text-center">
+                <img src={service.imageUrl} alt={service.name} className="w-32 h-32 object-cover mx-auto mb-4 rounded-md" />
+                <h4 className="text-lg font-medium text-gray-900">{service.name}</h4>
+                <p className="text-sm text-gray-600">{service.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Main Dashboard Component
 const Dashboard = () => {
   const { user } = useContext(AppContext);
-  const [activeTab, setActiveTab] = useState(user.role === 'Admin' ? 'uploads' : 'reports');
+  const [activeTab, setActiveTab] = useState('home');
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      <main>
-        {activeTab === 'uploads' && user.role === 'Admin' && <Uploads />}
-        {activeTab === 'reports' && <Reports />}
+      {/* Navigation */}
+      <ul className="flex space-x-4 p-4 bg-white shadow">
+        <li onClick={() => setActiveTab('home')}>Home</li>
+        <li onClick={() => setActiveTab('contact')}>Contact</li>
+        <li onClick={() => setActiveTab('payroll')}>Payroll</li>
+
+        {user?.role === 'Admin' && (
+          <>
+            <li onClick={() => setActiveTab('uploads')}>Uploads</li>
+            <li onClick={() => setActiveTab('esiUploads')}>ESI Uploads</li>
+          </>
+        )}
+
+        {user && <li onClick={() => setActiveTab('reports')}>Reports</li>}
+        {!user && <li onClick={() => setActiveTab('login')}>Login</li>}
+      </ul>
+
+      {/* Page Content */}
+      <main className="p-4">
+        {activeTab === 'home' && <Home />}
+        {activeTab === 'contact' && <Contact />}
+        {activeTab === 'payroll' && <Payroll />}
+        {user?.role === 'Admin' && activeTab === 'uploads' && <Uploads />}
+        {user?.role === 'Admin' && activeTab === 'esiUploads' && <ESIUploads />}
+        {user && activeTab === 'reports' && <Reports />}
+        {activeTab === 'login' && !user && <Login />}
       </main>
     </div>
   );
 };
+
 
 // Main App Component
 const App = () => {
@@ -1145,10 +1608,8 @@ const App = () => {
   const login = async (loginId, password) => {
     const apiService = RealApiService;
     const result = await apiService.login(loginId, password);
-    if ("success" == result.status) {
-      // Save token to localStorage or Context
-      localStorage.setItem('apitoken', result.jwtToken);
-
+    if (result.status === "success") {
+      localStorage.setItem("apitoken", result.jwtToken);
       setUser(result);
     }
   };
@@ -1156,25 +1617,20 @@ const App = () => {
   const logout = async () => {
     const apiService = RealApiService;
     const result = await apiService.logout();
-    if ("success" == result.status) {
-      localStorage.removeItem('apitoken');
+    if (result.status === "success") {
+      localStorage.removeItem("apitoken");
       setUser(null);
     }
   };
 
-  const contextValue = {
-    user,
-    login,
-    logout
-  };
+  const contextValue = { user, login, logout };
 
   return (
     <AppContext.Provider value={contextValue}>
-      <div className="App">
-        {user ? <Dashboard /> : <Login />}
-      </div>
+      <Dashboard />
     </AppContext.Provider>
   );
 };
+
 
 export default App;
