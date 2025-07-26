@@ -1233,6 +1233,9 @@ const ESIUploads = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      User Id
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Company
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -1263,7 +1266,10 @@ const ESIUploads = () => {
                           {upload.user_id}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {upload.company}
+                          {upload.company_name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {upload.upload_month}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {upload.file_name}
@@ -1708,7 +1714,7 @@ const Dashboard = () => {
       {/* Navigation */}
       <ul className="flex space-x-4 p-4 bg-white shadow">
         <li onClick={() => setActiveTab('home')}>Home</li>
-        <li onClick={() => setActiveTab('contact')}>Contact</li> 
+        <li onClick={() => setActiveTab('contact')}>Contact</li>
 
         {user?.role === 'Admin' && (
           <>
@@ -1724,7 +1730,7 @@ const Dashboard = () => {
       {/* Page Content */}
       <main className="p-4">
         {activeTab === 'home' && <Home />}
-        {activeTab === 'contact' && <Contact />} 
+        {activeTab === 'contact' && <Contact />}
         {user?.role === 'Admin' && activeTab === 'uploads' && <Uploads />}
         {user?.role === 'Admin' && activeTab === 'esiUploads' && <ESIUploads />}
         {user && activeTab === 'reports' && <Reports />}
@@ -1744,7 +1750,8 @@ const App = () => {
     const result = await apiService.login(loginId, password);
     if (result.status === "success") {
       localStorage.setItem("apitoken", result.jwtToken);
-      setUser(result);
+      setUser(result);         
+      setActiveTab("reports");
     }
   };
 
