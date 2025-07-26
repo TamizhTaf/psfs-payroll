@@ -418,9 +418,9 @@ const Header = () => {
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <User className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-700">{user.name}</span>
+              <span className="text-sm text-gray-700">{user?.name}</span>
               <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                {user.role}
+                {user?.role}
               </span>
             </div>
 
@@ -458,7 +458,7 @@ const Navigation = ({ activeTab, setActiveTab }) => {
             </div>
           </button>
 
-          {user.id <= 0 && (
+          {user?.id <= 0 && (
             <button
               onClick={() => setActiveTab('login')}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'login'
@@ -472,7 +472,7 @@ const Navigation = ({ activeTab, setActiveTab }) => {
             </button>
           )}
 
-          {user.role === 'Admin' && (
+          {user?.role === 'Admin' && (
             <button
               onClick={() => setActiveTab('uploads')}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'uploads'
@@ -486,7 +486,7 @@ const Navigation = ({ activeTab, setActiveTab }) => {
             </button>
           )}
 
-          {user.role === 'Admin' && (
+          {user?.role === 'Admin' && (
             <button
               onClick={() => setActiveTab('esiUploads')}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'esiUploads'
@@ -1529,7 +1529,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+      <div className="w-full space-y-8">
 
         {/* About Power Star Facility Services */}
         <div>
