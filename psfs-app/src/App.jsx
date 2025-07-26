@@ -525,6 +525,7 @@ const UploadModal = ({ uploadPurpose, isOpen, onClose, onSubmit, loading }) => {
     file_name: '',
     file_content: '',
     user_id: '',
+    company_name: '',
     upload_purpose: uploadPurpose
   });
 
@@ -568,6 +569,23 @@ const UploadModal = ({ uploadPurpose, isOpen, onClose, onSubmit, loading }) => {
           <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Upload</h3>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Company
+              </label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                value={formData.company_name}
+                onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
+              >
+                <option value="">Select a company</option>
+                {companyList.map((company) => (
+                  <option key={company.name} value={company.name}>
+                    {company.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             {uploadPurpose === 'SALARY' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -836,6 +854,29 @@ const Uploads = () => {
         {/* Filters */}
         <div className="bg-white p-4 rounded-lg shadow mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Filter by Company
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  value={filters.company_name}
+                  onChange={(e) => setFormData({ ...filters, company_name: e.target.value })}
+                >
+                  <option value="">Select a company</option>
+                  {companyList.map((company) => (
+                    <option key={company.name} value={company.name}>
+                      {company.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Filter by Name
@@ -896,6 +937,9 @@ const Uploads = () => {
                       Upload Month
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Company
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       File Name
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -921,6 +965,9 @@ const Uploads = () => {
                             year: 'numeric',
                             month: 'long'
                           })}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {upload.company_name}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {upload.file_name}
@@ -1107,6 +1154,28 @@ const ESIUploads = () => {
         {/* Filters */}
         <div className="bg-white p-4 rounded-lg shadow mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Filter by Company
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  value={filters.company_name}
+                  onChange={(e) => setFormData({ ...filters, company_name: e.target.value })}
+                >
+                  <option value="">Select a company</option>
+                  {companyList.map((company) => (
+                    <option key={company.name} value={company.name}>
+                      {company.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Filter by Name
@@ -1164,6 +1233,9 @@ const ESIUploads = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Company
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Upload Month
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -1189,6 +1261,9 @@ const ESIUploads = () => {
                       <tr key={upload.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {upload.user_id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {upload.company}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {upload.file_name}
@@ -1330,6 +1405,27 @@ const Reports = () => {
         {/* Filters */}
         <div className="bg-white p-4 rounded-lg shadow mb-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Filter by Company
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  value={filters.company_name}
+                  onChange={(e) => setFormData({ ...filters, company_name: e.target.value })}
+                >
+                  <option value="">Select a company</option>
+                  {companyList.map((company) => (
+                    <option key={company.name} value={company.name}>
+                      {company.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Filter by ID
@@ -1404,6 +1500,9 @@ const Reports = () => {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Id No
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Company
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       UAN
@@ -1560,6 +1659,43 @@ const Home = () => {
   );
 };
 
+const offices = [
+  {
+    name: "POWER STAR FACILITY SERVICES",
+    address: `No.C-10, 1st Floor, Razack Garden Main Road,
+Arumbakkam, Chennai - 600 106`
+  },
+  {
+    name: "FOCUS FACILITY MANAGEMENT SERVICES",
+    address: `No-4, Sri Ramnagar, Lakshmipuram,
+Peelamedu, Coimbatore - 641004`
+  },
+  {
+    name: "SHINE FACILITY MANAGEMENT SERVICES",
+    address: `No. 33, Perumal Koil Street,
+Arumbakkam, Chennai - 600106`
+  }
+];
+
+const Contact = () => {
+  return (
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto">
+        <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">Contact Us</h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {offices.map((office, index) => (
+            <div key={index} className="bg-white shadow rounded-lg p-6">
+              <h3 className="text-xl font-semibold text-indigo-700 mb-2">{office.name}</h3>
+              <p className="text-gray-700 whitespace-pre-line">{office.address}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Main Dashboard Component
 const Dashboard = () => {
   const { user } = useContext(AppContext);
@@ -1572,8 +1708,7 @@ const Dashboard = () => {
       {/* Navigation */}
       <ul className="flex space-x-4 p-4 bg-white shadow">
         <li onClick={() => setActiveTab('home')}>Home</li>
-        <li onClick={() => setActiveTab('contact')}>Contact</li>
-        <li onClick={() => setActiveTab('payroll')}>Payroll</li>
+        <li onClick={() => setActiveTab('contact')}>Contact</li> 
 
         {user?.role === 'Admin' && (
           <>
@@ -1589,8 +1724,7 @@ const Dashboard = () => {
       {/* Page Content */}
       <main className="p-4">
         {activeTab === 'home' && <Home />}
-        {activeTab === 'contact' && <Contact />}
-        {activeTab === 'payroll' && <Payroll />}
+        {activeTab === 'contact' && <Contact />} 
         {user?.role === 'Admin' && activeTab === 'uploads' && <Uploads />}
         {user?.role === 'Admin' && activeTab === 'esiUploads' && <ESIUploads />}
         {user && activeTab === 'reports' && <Reports />}
