@@ -1,5 +1,9 @@
 CREATE TABLE psfs.file_upload (
     id INT PRIMARY KEY AUTO_INCREMENT,
+user_id VARCHAR(500),
+upload_date date,
+    company_name                 VARCHAR(500), 
+    upload_purpose VARCHAR(20), 
     upload_by VARCHAR(100),
     upload_month VARCHAR(50),
     file_name VARCHAR(500),
@@ -10,6 +14,7 @@ CREATE TABLE psfs.file_upload (
  CREATE TABLE psfs.employee_salary (
     serial_no              VARCHAR(500),
     id_no                  VARCHAR(500),
+    company_name                 VARCHAR(500), 
     uan_no                 VARCHAR(500),
     esi_no                 VARCHAR(500),
     aadhar_card_no         VARCHAR(500),
@@ -42,6 +47,8 @@ CREATE TABLE psfs.file_upload (
 CREATE TABLE psfs.user (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     login_id VARCHAR(100) UNIQUE NOT NULL,      -- Login identifier (can be email, etc.)
+    
+    company_name                 VARCHAR(500), 
     name VARCHAR(200) NOT NULL,             -- Display name or full name
     password VARCHAR(255) NOT NULL,            -- Hashed password
     role VARCHAR(50) NOT NULL                  -- e.g., ROLE_USER, ROLE_ADMIN
