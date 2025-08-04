@@ -13,6 +13,9 @@ public class User {
 	@Column(name = "login_id", nullable = false, unique = true)
 	private String loginId;
 
+	@Column(name = "company_name")
+	private String companyName;
+
 	@Column(nullable = false)
 	private String name;
 

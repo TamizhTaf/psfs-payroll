@@ -36,10 +36,13 @@ public class PayslipGenerator {
 		// Create a 2-column table: left = text (80%), right = logo (20%)
 		Table headerTable = new Table(UnitValue.createPercentArray(new float[] { 80, 20 })).useAllAvailableWidth();
 
+		String companyName = "POWER STAR FACILITY SERVICES\n";
+		String address1 = "No.c-10, 1st Floor, Razack Garden Main Road\n";
+		String address2 = "Arumbakkam, Chennai - 600 106\\n";
+
 		// Combine all center-aligned text into one paragraph
-		Paragraph textBlock = new Paragraph().add(new Text("POWER STAR FACILITY SERVICES\n").setBold().setFontSize(16))
-				.add(new Text("No.c-10, 1st Floor, Razack Garden Main Road\n"))
-				.add(new Text("Arumbakkam, Chennai - 600 106\n"))
+		Paragraph textBlock = new Paragraph().add(new Text(companyName).setBold().setFontSize(16))
+				.add(new Text(address1)).add(new Text(address2))
 				.add(new Text("PAY SLIP FOR THE MONTH OF " + data.get("upload_month")).setBold())
 				.setTextAlignment(TextAlignment.CENTER);
 

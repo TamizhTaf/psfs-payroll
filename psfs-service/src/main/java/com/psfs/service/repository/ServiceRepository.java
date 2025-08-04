@@ -32,8 +32,11 @@ public class ServiceRepository {
 		String fileName = String.valueOf(request.get("file_name"));
 		String uploadMonth = String.valueOf(request.get("upload_month"));
 		String action = String.valueOf(request.get("action"));
+		String upload_purpose = String.valueOf(request.get("upload_purpose"));
+		String user_id = String.valueOf(request.get("user_id"));
+		String company_name = String.valueOf(request.get("company_name"));
 
-		String sql = "SELECT id, upload_by, upload_month, file_name, upload_date FROM file_upload WHERE 1 = 1";
+		String sql = "SELECT * FROM file_upload WHERE 1 = 1";
 
 		if ("download".equalsIgnoreCase(action))
 			sql = "SELECT * FROM file_upload WHERE 1 = 1";
@@ -46,16 +49,40 @@ public class ServiceRepository {
 			sql += " AND upload_month = ?";
 		}
 
+		if (ServiceUtil.isNotEmpty(upload_purpose)) {
+			sql += " AND upload_purpose = ?";
+		}
+
+		if (ServiceUtil.isNotEmpty(user_id)) {
+			sql += " AND user_id = ?";
+		}
+
+		if (ServiceUtil.isNotEmpty(company_name)) {
+			sql += " AND company_name = ?";
+		}
+
 		try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
 				PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-			int parameterIndex = 0;
-			if (ServiceUtil.isNotEmpty(uploadMonth)) {
-				stmt.setString(parameterIndex++, uploadMonth);
+			int parameterIndex = 1;
+			if (ServiceUtil.isNotEmpty(fileName)) {
+				stmt.setString(parameterIndex++, fileName);
 			}
 
 			if (ServiceUtil.isNotEmpty(uploadMonth)) {
 				stmt.setString(parameterIndex++, uploadMonth);
+			}
+
+			if (ServiceUtil.isNotEmpty(upload_purpose)) {
+				stmt.setString(parameterIndex++, upload_purpose);
+			}
+
+			if (ServiceUtil.isNotEmpty(user_id)) {
+				stmt.setString(parameterIndex++, user_id);
+			}
+
+			if (ServiceUtil.isNotEmpty(company_name)) {
+				stmt.setString(parameterIndex++, company_name);
 			}
 
 			try (ResultSet rs = stmt.executeQuery()) {
@@ -91,8 +118,12 @@ public class ServiceRepository {
 		String uploadMonth = String.valueOf(request.get("upload_month"));
 		String fileName = String.valueOf(request.get("file_name"));
 		String fileContent = String.valueOf(request.get("file_content")); // Base64 or plain
+		String upload_purpose = String.valueOf(request.get("upload_purpose"));
+		String user_id = String.valueOf(request.get("user_id"));
+		String company_name = String.valueOf(request.get("company_name"));
 
-		String sql = "INSERT INTO file_upload (upload_by, upload_month, file_name, file_content, upload_date) VALUES (?, ?, ?, ?, ?)";
+		String sql = "INSERT INTO file_upload (upload_by, upload_month, file_name, file_content, upload_date, upload_purpose, user_id, company_name) "
+				+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
 		try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
 				PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -101,6 +132,10 @@ public class ServiceRepository {
 			stmt.setString(3, fileName);
 			stmt.setBytes(4, fileContent.getBytes());
 			stmt.setTimestamp(5, new java.sql.Timestamp(System.currentTimeMillis()));
+			stmt.setString(6, upload_purpose);
+			stmt.setString(7, user_id);
+			stmt.setString(8, company_name);
+
 			int result = stmt.executeUpdate();
 			request.put("id", result);
 			LOG.info("File uploaded successfully.");
@@ -111,8 +146,10 @@ public class ServiceRepository {
 
 		List<Map<String, Object>> records = new ArrayList<>();
 		String uploadMonth = String.valueOf(request.get("upload_month"));
+		String upload_purpose = String.valueOf(request.get("upload_purpose"));
 		String empId = String.valueOf(request.get("id_no"));
 		String uan = String.valueOf(request.get("uan_no"));
+		String company_name = String.valueOf(request.get("company_name"));
 
 		StringBuilder sql = new StringBuilder("SELECT * FROM employee_salary WHERE 1=1");
 
@@ -126,6 +163,14 @@ public class ServiceRepository {
 
 		if (ServiceUtil.isNotEmpty(uan)) {
 			sql.append(" AND uan_no = ?");
+		}
+
+		if (ServiceUtil.isNotEmpty(upload_purpose)) {
+			sql.append(" AND upload_purpose = ?");
+		}
+
+		if (ServiceUtil.isNotEmpty(company_name)) {
+			sql.append(" AND company_name = ?");
 		}
 
 		try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
@@ -142,6 +187,14 @@ public class ServiceRepository {
 
 			if (ServiceUtil.isNotEmpty(uan)) {
 				stmt.setString(paramIndex++, uan);
+			}
+
+			if (ServiceUtil.isNotEmpty(upload_purpose)) {
+				stmt.setString(paramIndex++, upload_purpose);
+			}
+
+			if (ServiceUtil.isNotEmpty(company_name)) {
+				stmt.setString(paramIndex++, company_name);
 			}
 
 			ResultSet rs = stmt.executeQuery();
@@ -166,8 +219,8 @@ public class ServiceRepository {
 				+ "serial_no, id_no, uan_no, esi_no, aadhar_card_no, bank_ac_no, gender, "
 				+ "name_of_the_employee, desingnation, site_name, total_days, basic, d_a, hra, "
 				+ "conveyance, washing_allw, other_allw, gross_salary, epf, esi, professional_tax, "
-				+ "labour_welfare_fund, uniform_ded, salary_advance, total_deduct, net_pay, emp_signature, upload_month"
-				+ ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+				+ "labour_welfare_fund, uniform_ded, salary_advance, total_deduct, net_pay, emp_signature, upload_month, company_name"
+				+ ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
 		try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
 				PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -203,6 +256,7 @@ public class ServiceRepository {
 				stmt.setString(i++, ServiceUtil.safeString(row.get("net_pay")));
 				stmt.setString(i++, ServiceUtil.safeString(row.get("emp_signature")));
 				stmt.setString(i++, ServiceUtil.safeString(row.get("upload_month")));
+				stmt.setString(i++, ServiceUtil.safeString(row.get("company_name")));
 				stmt.addBatch();
 			}
 

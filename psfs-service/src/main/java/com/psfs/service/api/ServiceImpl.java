@@ -18,6 +18,7 @@ public class ServiceImpl {
 	public static Map<String, Object> upload(Map<String, Object> request) throws Exception {
 		ServiceRepository.insertFileUpload(request);
 		String id = String.valueOf(request.get("id"));
+		String uploadPurpose = String.valueOf(request.get("upload_purpose"));
 
 		if (!ServiceUtil.isNotEmpty(id)) {
 			request.put("status", "failed");
@@ -25,25 +26,29 @@ public class ServiceImpl {
 			return request;
 		}
 
-		String base64 = String.valueOf(request.get("file_content"));
-		String upload_month = String.valueOf(request.get("upload_month"));
+		if ("SALARY".equalsIgnoreCase(uploadPurpose)) {
+			String base64 = String.valueOf(request.get("file_content"));
+			String upload_month = String.valueOf(request.get("upload_month"));
+			String company_name = String.valueOf(request.get("company_name"));
 
-		// Remove base64 prefix if present
-		if (base64.contains(",")) {
-			base64 = base64.split(",")[1];
+			// Remove base64 prefix if present
+			if (base64.contains(",")) {
+				base64 = base64.split(",")[1];
+			}
+
+			// Decode it
+			byte[] decoded = Base64.getDecoder().decode(base64);
+
+			List<Map<String, Object>> records = ExcelUtil.readExcel(decoded);
+			for (Map<String, Object> uploadData : records) {
+				uploadData.put("upload_month", upload_month);
+				uploadData.put("company_name", company_name);
+			}
+
+			ServiceRepository.insertEmployeeSalaries(records);
 		}
 
-		// Decode it
-		byte[] decoded = Base64.getDecoder().decode(base64);
-
-		List<Map<String, Object>> records = ExcelUtil.readExcel(decoded);
-		for (Map<String, Object> uploadData : records) {
-			uploadData.put("upload_month", upload_month);
-		}
-
-		ServiceRepository.insertEmployeeSalaries(records);
 		request.remove("file_content");
-
 		return request;
 	}
 

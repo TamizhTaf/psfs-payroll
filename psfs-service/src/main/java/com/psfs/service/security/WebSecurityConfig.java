@@ -2,6 +2,8 @@ package com.psfs.service.security;
 
 import com.psfs.service.api.util.ServiceUtil;
 import com.psfs.service.security.jwt.JwtRequestFilter;
+import com.psfs.service.security.jwt.MeCORSFilter;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -11,9 +13,8 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain; 
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.channel.ChannelProcessingFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
@@ -36,24 +37,22 @@ public class WebSecurityConfig {
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
 		http.csrf((csrf) -> {
 			csrf.disable();
 		});
-		 	
-		http.authorizeHttpRequests((auth) -> {
-			auth.requestMatchers("/api/**").authenticated()  // API endpoints require authentication
-			.requestMatchers("/liveness/**").permitAll()  
-			.requestMatchers("/api/auth/register/**").permitAll() 
-			.requestMatchers("/api/auth/signin/**").permitAll() 
-			.requestMatchers("/api/auth/signout/**").permitAll() // Liveness endpoints are public
-			.anyRequest().authenticated();  // All other requests require authentication
-		});
 
+		http.authorizeHttpRequests((auth) -> {
+			auth.requestMatchers("/api/auth/register/**", "/api/auth/signin/**", "/api/auth/signout/**", "/liveness/**")
+					.permitAll() // Public access
+					.anyRequest().authenticated(); // Secure all other endpoints
+		});
 
 		http.sessionManagement((sess) -> {
 			sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 		});
 
+		http.addFilterBefore(new MeCORSFilter(), ChannelProcessingFilter.class);
 		http.addFilterBefore(this.jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 		return http.build();
 	}
@@ -61,14 +60,9 @@ public class WebSecurityConfig {
 	@Bean
 	public AuthenticationProvider authenticationProvider() {
 		DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-		provider.setUserDetailsService(this.userDetailsService);
-		provider.setPasswordEncoder(ServiceUtil.passwordEncoder());
+		provider.setUserDetailsService(this.userDetailsService); // Injecting custom UserDetailsService
+		provider.setPasswordEncoder(ServiceUtil.passwordEncoder()); // PasswordEncoder (e.g., BCrypt)
 		return provider;
-	}
-
-	@Bean
-	public static PasswordEncoder passwordEncoder() {
-		return new BCryptPasswordEncoder();
 	}
 
 }

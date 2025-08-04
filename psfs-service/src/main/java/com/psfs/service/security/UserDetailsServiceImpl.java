@@ -45,6 +45,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 			SecurityUser securityUser = new SecurityUser(user.getLoginId(), user.getPassword(), enabled, true, true,
 					true, authorities);
 
+			securityUser.setId(user.getId());
 			securityUser.setName(user.getName());
 			return securityUser;
 
