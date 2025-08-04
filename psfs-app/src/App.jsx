@@ -1,5 +1,5 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
-import { ChevronLeft, ChevronRight, Upload, Download, Trash2, Filter, Plus, Settings, User, LogOut, FileText, Users, Calendar, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Upload, Download, Trash2, Filter, Plus, Settings, User, LogOut, FileText, Users, Calendar, Search, Delete } from 'lucide-react';
 
 // Context for global state management
 const AppContext = createContext();
@@ -16,7 +16,7 @@ const isEmpty = (val) =>
 class RealApiService {
   static baseUrl = 'http://localhost:8085/psfs-service/api';
 
-  static async login(loginId, password) {
+  static async login(company_name, loginId, password) {
 
     const apitoken = localStorage.getItem('apitoken');
 
@@ -26,7 +26,7 @@ class RealApiService {
         'Content-Type': 'application/json',
         ...(apitoken && { 'apitoken': `Bearer ${apitoken}` })
       },
-      body: JSON.stringify({ loginId, password })
+      body: JSON.stringify({ company_name, loginId, password })
     });
 
     if (!response.ok) throw new Error('Login failed');
@@ -58,6 +58,24 @@ class RealApiService {
     });
 
     if (!response.ok) throw new Error('Registration failed');
+    return await response.json();
+  }
+
+  static async getUsers(filters = {}) {
+
+    const apitoken = localStorage.getItem('apitoken');
+
+    const response = await fetch(`${this.baseUrl}/auth/users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(apitoken && { 'apitoken': `Bearer ${apitoken}` })
+      },
+      body: JSON.stringify(filters)
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch uploads');
+
     return await response.json();
   }
 
@@ -117,6 +135,32 @@ class RealApiService {
     // Check if data is empty or missing required fields
     if (!data || !data.file_name || !data.file_content) {
       throw new Error('No upload data available for download');
+    }
+
+    return data;
+  }
+
+
+  static async deleteUpload(filters = {}) {
+
+    const apitoken = localStorage.getItem('apitoken');
+
+    const response = await fetch(`${this.baseUrl}/deleteUpload`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(apitoken && { 'apitoken': `Bearer ${apitoken}` })
+      },
+      body: JSON.stringify(filters)
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch upload delete');
+
+    const data = await response.json();
+
+    // Check if data is empty or missing required fields
+    if (!data) {
+      throw new Error('No upload data available for delete');
     }
 
     return data;
@@ -184,7 +228,7 @@ const SkeletonLoader = ({ rows = 5 }) => (
 // Login Component
 const Login = () => {
   const { login } = useContext(AppContext);
-  const [formData, setFormData] = useState({ loginId: '', password: '' });
+  const [formData, setFormData] = useState({ company_name: '', loginId: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showRegister, setShowRegister] = useState(false);
@@ -215,7 +259,7 @@ const Login = () => {
       const result = await apiService.register(userData);
       if ("success" == result.status) {
         setShowRegister(false);
-        setFormData({ loginId: userData.loginId, password: '' });
+        setFormData({ company_name: company_name, loginId: userData.loginId, password: '' });
       }
 
     } catch (err) {
@@ -248,6 +292,21 @@ const Login = () => {
           )}
 
           <div className="rounded-md shadow-sm -space-y-px">
+
+            <div>
+              <select required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Company"
+                value={formData.company_name}
+                onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}>
+                {companyList.map((company) => (
+                  <option key={company.name} value={company.name}>
+                    {company.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div>
               <input
                 type="loginId"
@@ -299,6 +358,7 @@ const Login = () => {
 // Register Component
 const RegisterForm = ({ onRegister, onBack, loading, error }) => {
   const [formData, setFormData] = useState({
+    company_name: '',
     name: '',
     loginId: '',
     password: '',
@@ -330,6 +390,19 @@ const RegisterForm = ({ onRegister, onBack, loading, error }) => {
           )}
 
           <div className="space-y-4">
+
+            <select required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Company"
+              value={formData.company_name}
+              onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}>
+              {companyList.map((company) => (
+                <option key={company.name} value={company.name}>
+                  {company.name}
+                </option>
+              ))}
+            </select>
+
             <input
               type="text"
               required
@@ -347,15 +420,6 @@ const RegisterForm = ({ onRegister, onBack, loading, error }) => {
               value={formData.loginId}
               onChange={(e) => setFormData({ ...formData, loginId: e.target.value })}
             />
-
-            <select
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-            >
-              <option value="Employee">Employee</option>
-              <option value="Admin">Admin</option>
-            </select>
 
             <input
               type="password"
@@ -399,42 +463,6 @@ const RegisterForm = ({ onRegister, onBack, loading, error }) => {
         </form>
       </div>
     </div>
-  );
-};
-
-// Header Component
-const Header = () => {
-  const { user, logout, toggleMode } = useContext(AppContext);
-
-  return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center">
-            <FileText className="h-8 w-8 text-indigo-600" />
-            <h1 className="ml-2 text-xl font-semibold text-gray-900">Payslip Manager</h1>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <User className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-700">{user?.name}</span>
-              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                {user?.role}
-              </span>
-            </div>
-
-            <button
-              onClick={logout}
-              className="flex items-center space-x-1 text-gray-600 hover:text-gray-900"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="text-sm">Logout</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </header>
   );
 };
 
@@ -520,6 +548,9 @@ const Navigation = ({ activeTab, setActiveTab }) => {
 const UploadModal = ({ uploadPurpose, isOpen, onClose, onSubmit, loading }) => {
 
   // Initialize the state for form data
+  const [userList, setUserList] = useState([]);
+  const [userLoading, setUserLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     upload_month: '',
     file_name: '',
@@ -559,6 +590,29 @@ const UploadModal = ({ uploadPurpose, isOpen, onClose, onSubmit, loading }) => {
     reader.readAsDataURL(file);  // Read the file as a Data URL
   };
 
+
+  const fetchUsers = async (selectedCompany) => {
+    setUserLoading(true);
+    setError('');
+    try {
+
+      const filters = { "company_name": selectedCompany };
+      const apiService = RealApiService;
+      const result = await apiService.getUsers(filters);
+      setUserList(result);
+
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUserLoading(false);
+    }
+  };
+
+  const handleCompanyChange = async (selectedCompany) => {
+    setFormData({ ...formData, company_name: selectedCompany });
+    fetchUsers(selectedCompany);
+  };
+
   // Return null if the modal is not open
   if (!isOpen) return null;
 
@@ -576,7 +630,7 @@ const UploadModal = ({ uploadPurpose, isOpen, onClose, onSubmit, loading }) => {
               <select
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 value={formData.company_name}
-                onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
+                onChange={handleCompanyChange(e.target.value)}
               >
                 <option value="">Select a company</option>
                 {companyList.map((company) => (
@@ -606,13 +660,17 @@ const UploadModal = ({ uploadPurpose, isOpen, onClose, onSubmit, loading }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   User Id
                 </label>
-                <input
-                  type="text"
-                  required
+                <select
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                   value={formData.user_id}
                   onChange={(e) => setFormData({ ...formData, user_id: e.target.value })}
-                />
+                >
+                  {userList.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             )}
 
@@ -775,6 +833,24 @@ const Uploads = () => {
       request.upload_purpose = upload_purpose;
       const apiService = RealApiService;
       const result = await apiService.downloadUpload(request);
+      handleExportExcel(result);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const handleUploadDelete = async (upload) => {
+    setLoading(true);
+    setError('');
+    try {
+      var request = {};
+      request.id = upload.id;
+      request.upload_purpose = upload_purpose;
+      const apiService = RealApiService;
+      const result = await apiService.deleteUpload(request);
       handleExportExcel(result);
     } catch (err) {
       setError(err.message);
@@ -985,6 +1061,16 @@ const Uploads = () => {
                               Download
                             </button>
                           </div>
+
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleUploadDelete(upload)}
+                              className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-indigo-600 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            >
+                              <Delete className="h-3 w-3 mr-1" />
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -1082,6 +1168,24 @@ const ESIUploads = () => {
       setLoading(false);
     }
   };
+
+  const handleUploadDelete = async (upload) => {
+    setLoading(true);
+    setError('');
+    try {
+      var request = {};
+      request.id = upload.id;
+      request.upload_purpose = upload_purpose;
+      const apiService = RealApiService;
+      const result = await apiService.deleteUpload(request);
+      fetchUploads();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const handleExportExcel = (data) => {
 
@@ -1285,6 +1389,15 @@ const ESIUploads = () => {
                             >
                               <Download className="h-3 w-3 mr-1" />
                               Download
+                            </button>
+                          </div>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleUploadDelete(upload)}
+                              className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-indigo-600 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            >
+                              <Delete className="h-3 w-3 mr-1" />
+                              Delete
                             </button>
                           </div>
                         </td>
@@ -1535,6 +1648,9 @@ const Reports = () => {
                           {report.id_no}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {report.company_name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {report.uan_no}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -1566,6 +1682,288 @@ const Reports = () => {
           )}
         </div>
       </div>
+    </div>
+  );
+};
+
+
+//Users Component 
+const Users = () => {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({ company_name: '', loginId: '', name: '' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showModal, setShowModal] = useState(false);
+  const [userLoading, setUserLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const itemsPerPage = 5;
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    setError('');
+    try {
+
+      const apiService = RealApiService;
+      const result = await apiService.getUsers(filters);
+      setUsers(result);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, [filters]);
+
+  const handleUser = async (userData) => {
+    setUserLoading(true);
+    setError('');
+    try {
+
+      userData.action = 'Add';
+      const apiService = RealApiService;
+      await apiService.createUser({
+        ...userData
+      });
+      setShowModal(false);
+      fetchUsers();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUserLoading(false);
+    }
+  };
+
+  const handleUserEdit = async (userData) => {
+    setLoading(true);
+    setError('');
+    try {
+
+      userData.action = 'Edit';
+      const apiService = RealApiService;
+      await apiService.createUser({
+        ...userData
+      });
+      setShowModal(false);
+      fetchUsers();
+
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUserDelete = async (user) => {
+    setLoading(true);
+    setError('');
+    try {
+      var request = {};
+      request.id = user.id;
+      request.user_purpose = user_purpose;
+      const apiService = RealApiService;
+      const result = await apiService.deleteUser(request);
+      fetchUsers();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredUsers = users.filter(user => {
+    const matchesName = !filters.name || user.name.toLowerCase().includes(filters.name.toLowerCase());
+    const matchesCompanyName = !filters.company_name || user.company_name.toLowerCase().includes(filters.company_name.toLowerCase());
+    const matchesLoginId = !filters.loginId || user.loginId === filters.loginId;
+    return matchesCompanyName && matchesName && matchesLoginId;
+  });
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Users Management</h2>
+          <button
+            onClick={() => setShowModal(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add New User
+          </button>
+        </div>
+
+        {error && (
+          <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            {error}
+          </div>
+        )}
+
+        {/* Filters */}
+        <div className="bg-white p-4 rounded-lg shadow mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Filter by Company
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  value={filters.company_name}
+                  onChange={(e) => setFormData({ ...filters, company_name: e.target.value })}
+                >
+                  <option value="">Select a company</option>
+                  {companyList.map((company) => (
+                    <option key={company.name} value={company.name}>
+                      {company.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Filter by User Id
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Search users..."
+                  value={filters.loginId}
+                  onChange={(e) => setFilters({ ...filters, loginId: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Filter by Name
+              </label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  value={filters.name}
+                  onChange={(e) => setFilters({ ...filters, name: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-end">
+              <button
+                onClick={() => {
+                  setFilters({ file_name: '', user_id: '' });
+                  setCurrentPage(1);
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="bg-white shadow overflow-hidden sm:rounded-md">
+          {loading ? (
+            <div className="p-6">
+              <SkeletonLoader rows={5} />
+            </div>
+          ) : (
+            <>
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      User Id
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Company
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {paginatedUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
+                        No users found
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedUsers.map((user) => (
+                      <tr key={user.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {user.loginId}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {user.company_name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {user.name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleUserEdit(user)}
+                              className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-indigo-600 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            >
+                              <Download className="h-3 w-3 mr-1" />
+                              Edit
+                            </button>
+                          </div>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleUserDelete(user)}
+                              className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-indigo-600 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            >
+                              <Delete className="h-3 w-3 mr-1" />
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+
+              {totalPages > 1 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      <UserModal
+        userPurpose={user_purpose}
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSubmit={handleUser}
+        loading={userLoading}
+      />
     </div>
   );
 };
@@ -1701,41 +2099,67 @@ const Contact = () => {
     </div>
   );
 };
-
-// Main Dashboard Component
 const Dashboard = () => {
-  const { user } = useContext(AppContext);
+  const { user, logout } = useContext(AppContext);
   const [activeTab, setActiveTab] = useState('home');
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
 
-      {/* Navigation */}
-      <ul className="flex space-x-4 p-4 bg-white shadow">
-        <li onClick={() => setActiveTab('home')}>Home</li>
-        <li onClick={() => setActiveTab('contact')}>Contact</li>
+      {/* Single Row Header: Logo + Menu | Spacer | User Info */}
+      <div className="flex items-center justify-between bg-white shadow p-4">
 
-        {user?.role === 'Admin' && (
-          <>
-            <li onClick={() => setActiveTab('uploads')}>Uploads</li>
-            <li onClick={() => setActiveTab('esiUploads')}>ESI Uploads</li>
-          </>
+        {/* Left: Logo + Navigation */}
+        <div className="flex items-center space-x-6">
+          {/* Logo */}
+          <img src="/psfs.png" alt="Logo" className="h-10 w-auto" />
+
+          {/* Navigation Menu */}
+          <ul className="flex items-center space-x-4">
+            <li onClick={() => setActiveTab('home')} className="cursor-pointer">Home</li>
+            <li onClick={() => setActiveTab('contact')} className="cursor-pointer">Contact</li>
+
+            {user?.role === 'Admin' && (
+              <>
+                <li onClick={() => setActiveTab('uploads')} className="cursor-pointer">Uploads</li>
+                <li onClick={() => setActiveTab('esiUploads')} className="cursor-pointer">ESI Uploads</li>
+              </>
+            )}
+
+            {user && <li onClick={() => setActiveTab('reports')} className="cursor-pointer">Reports</li>}
+            {!user && <li onClick={() => setActiveTab('login')} className="cursor-pointer">Login</li>}
+          </ul>
+        </div>
+
+        {/* Right: User Info + Logout */}
+        {user && (
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <User className="h-4 w-4 text-gray-500" />
+              <span className="text-sm text-gray-700">{user.name}</span>
+              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                {user.role}
+              </span>
+            </div>
+            <button onClick={logout} className="flex items-center space-x-1 text-gray-600 hover:text-gray-900">
+              <LogOut className="h-4 w-4" />
+              <span className="text-sm">Logout</span>
+            </button>
+          </div>
         )}
-
-        {user && <li onClick={() => setActiveTab('reports')}>Reports</li>}
-        {!user && <li onClick={() => setActiveTab('login')}>Login</li>}
-      </ul>
+      </div>
 
       {/* Page Content */}
       <main className="p-4">
-        {activeTab === 'home' && <Home />}
-        {activeTab === 'contact' && <Contact />}
+        {!user && activeTab === 'home' && <Home />}
+        {!user && activeTab === 'contact' && <Contact />}
+        {user && activeTab === 'users' && <Users />}
         {user?.role === 'Admin' && activeTab === 'uploads' && <Uploads />}
-        {user?.role === 'Admin' && activeTab === 'esiUploads' && <ESIUploads />}
+        {user && activeTab === 'esiUploads' && <ESIUploads />}
         {user && activeTab === 'reports' && <Reports />}
         {activeTab === 'login' && !user && <Login />}
       </main>
+
     </div>
   );
 };
@@ -1745,13 +2169,16 @@ const Dashboard = () => {
 const App = () => {
   const [user, setUser] = useState(null);
 
-  const login = async (loginId, password) => {
+  const login = async (company_name, loginId, password) => {
     const apiService = RealApiService;
-    const result = await apiService.login(loginId, password);
+    const result = await apiService.login(company_name, loginId, password);
     if (result.status === "success") {
       localStorage.setItem("apitoken", result.jwtToken);
-      setUser(result);         
+      setUser(result);
       setActiveTab("reports");
+    } else {
+      localStorage.removeItem("apitoken");
+      setUser(null);
     }
   };
 
