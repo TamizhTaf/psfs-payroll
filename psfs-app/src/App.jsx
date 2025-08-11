@@ -240,7 +240,7 @@ const Login = () => {
 
     try {
 
-      await login(formData.loginId, formData.password);
+      await login(formData.company_name, formData.loginId, formData.password);
 
     } catch (err) {
       setError(err.message);
@@ -1686,9 +1686,68 @@ const Reports = () => {
   );
 };
 
+//User Model
+
+const UserModal = ({ isOpen, onClose, onSubmit, loading }) => {
+
+  // Initialize the state for form data
+  const [userList, setUserList] = useState([]);
+  const [userLoading, setUserLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [formData, setFormData] = useState({});
+
+  // Handle the form submission
+  const handleSubmit = (e) => {
+    e.preventDefault(); 
+    console.log(formData);
+    onSubmit(formData); 
+  };
+  
+  // Return null if the modal is not open
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div className="mt-3">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Upload</h3>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                id
+              </label>
+              <input                  type="month"                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  value={formData.id}
+                  onChange={(e) => setFormData({ ...formData, id: e.target.value })} /> 
+            </div>
+          
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              >
+                {loading ? 'Uploading...' : 'Upload'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 //Users Component 
-const Users = () => {
+const UserComponent = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ company_name: '', loginId: '', name: '' });
@@ -1766,6 +1825,7 @@ const Users = () => {
       request.user_purpose = user_purpose;
       const apiService = RealApiService;
       const result = await apiService.deleteUser(request);
+      console.log(result);
       fetchUsers();
     } catch (err) {
       setError(err.message);
@@ -1958,7 +2018,6 @@ const Users = () => {
       </div>
 
       <UserModal
-        userPurpose={user_purpose}
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         onSubmit={handleUser}
@@ -2116,8 +2175,10 @@ const Dashboard = () => {
 
           {/* Navigation Menu */}
           <ul className="flex items-center space-x-4">
-            <li onClick={() => setActiveTab('home')} className="cursor-pointer">Home</li>
-            <li onClick={() => setActiveTab('contact')} className="cursor-pointer">Contact</li>
+            {!user && <li onClick={() => setActiveTab('home')} className="cursor-pointer">Home</li>}
+            {!user && <li onClick={() => setActiveTab('contact')} className="cursor-pointer">Contact</li>}
+
+            {user && <li onClick={() => setActiveTab('users')} className="cursor-pointer">Users</li>}
 
             {user?.role === 'Admin' && (
               <>
@@ -2153,7 +2214,7 @@ const Dashboard = () => {
       <main className="p-4">
         {!user && activeTab === 'home' && <Home />}
         {!user && activeTab === 'contact' && <Contact />}
-        {user && activeTab === 'users' && <Users />}
+        {user && activeTab === 'users' && <UserComponent />}
         {user?.role === 'Admin' && activeTab === 'uploads' && <Uploads />}
         {user && activeTab === 'esiUploads' && <ESIUploads />}
         {user && activeTab === 'reports' && <Reports />}
